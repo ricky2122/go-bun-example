@@ -14,16 +14,6 @@ type DBConfig struct {
 	Password string
 }
 
-type UserID int
-
-type User struct {
-	ID       UserID
-	Name     string
-	Password string
-	Email    string
-	BirthDay string
-}
-
 func main() {
 	conf := DBConfig{
 		Host:     "localhost",
@@ -42,7 +32,11 @@ func main() {
 		fmt.Printf("Failed getting users: %v\n", err)
 		return
 	}
-	fmt.Printf("Get users: %v\n", users)
+	fmt.Print("Get users:")
+	for _, user := range users {
+		fmt.Printf(" %s", user)
+	}
+	fmt.Println()
 
 	// get user by id
 	userID := 1
@@ -51,16 +45,11 @@ func main() {
 		fmt.Printf("Failed getting user(id: %d): %v\n", userID, err)
 		return
 	}
-	fmt.Printf("Get user: %v\n", *user)
+	fmt.Printf("Get user: %s\n", user)
 
 	// create user
-	newUser := User{
-		Name:     "user04",
-		Password: "example04",
-		Email:    "example04@example.com",
-		BirthDay: "2003-01-01",
-	}
-	createdUser, err := CreateUser(ctx, db, newUser)
+	createUser, _ := NewUser("user04", "example04", "example04@example.com", "2004-01-01")
+	createdUser, err := CreateUser(ctx, db, *createUser)
 	if err != nil {
 		var customErr *CustomError
 		if !errors.As(err, &customErr) {
@@ -75,17 +64,15 @@ func main() {
 		}
 
 	}
-	fmt.Printf("Created User: %v\n", createdUser)
+	fmt.Printf("Created User: %s\n", createdUser)
 
 	// update user
-	updateUser := User{
-		ID:       createdUser.ID,
-		Name:     "user05",
-		Password: "example05",
-		Email:    "example05@example.com",
-		BirthDay: "2004-01-01",
-	}
-	updatedUser, err := UpdateUser(ctx, db, updateUser)
+	updateUser := createdUser
+	updateUser.SetName("update_user04")
+	updateUser.SetPassword("update_example04")
+	updateUser.SetEmail("update_example04@example.com")
+	_ = updateUser.SetBirthDay("2004-02-02")
+	updatedUser, err := UpdateUser(ctx, db, *updateUser)
 	if err != nil {
 		var customErr *CustomError
 		if !errors.As(err, &customErr) {
@@ -99,30 +86,25 @@ func main() {
 			return
 		}
 	}
-	fmt.Printf("Updated user: %v\n", updatedUser)
+	fmt.Printf("Updated user: %s\n", updatedUser)
 
 	// delete user
-	deleteUserID := createdUser.ID
+	deleteUserID := createdUser.GetID()
 	if err := DeleteUser(ctx, db, UserID(deleteUserID)); err != nil {
 		fmt.Printf("Failed deleting user: %v\n", err)
 		return
 	}
-	fmt.Printf("Delete userID: %d", deleteUserID)
+	fmt.Printf("Delete userID: %d\n", deleteUserID)
 
 	// bulk insert users
-	createUsers := []User{
-		{
-			Name:     "user06",
-			Password: "example06",
-			Email:    "example06@example.com",
-			BirthDay: "2005-01-01",
-		},
-		{
-			Name:     "user07",
-			Password: "example07",
-			Email:    "example07@example.com",
-			BirthDay: "2006-01-01",
-		},
+	createUsers := make([]User, 0, 2)
+	for i := 0; i < 2; i++ {
+		name := fmt.Sprintf("user0%d", i+5)
+		password := fmt.Sprintf("example0%d", i+5)
+		email := fmt.Sprintf("example0%d@example.com", i+5)
+		birthDay := fmt.Sprintf("200%d-01-01", i+5)
+		createUser, _ = NewUser(name, password, email, birthDay)
+		createUsers = append(createUsers, *createUser)
 	}
 	createdUsers, err := BulkInsertUsers(ctx, db, createUsers)
 	if err != nil {
@@ -138,16 +120,48 @@ func main() {
 			return
 		}
 	}
-	fmt.Printf("created users: %v", createdUsers)
+	fmt.Printf("created users: %+v\n", createdUsers)
+
+	// bulk update users
+	updateUsers := make([]User, 0, len(createdUsers))
+	for i, createdUser := range createdUsers {
+		updateUser := createdUser
+		name := fmt.Sprintf("update_user0%d", i+5)
+		password := fmt.Sprintf("update_example0%d", i+5)
+		email := fmt.Sprintf("update_example0%d@example.com", i+5)
+		birthDay := fmt.Sprintf("200%d-02-02", i+5)
+
+		updateUser.SetName(name)
+		updateUser.SetPassword(password)
+		updateUser.SetEmail(email)
+		_ = updateUser.SetBirthDay(birthDay)
+
+		updateUsers = append(updateUsers, updateUser)
+	}
+	updatedUsers, err := BulkUpdateUsers(ctx, db, updateUsers)
+	if err != nil {
+		var customErr *CustomError
+		if !errors.As(err, &customErr) {
+			fmt.Printf("Failed updating users: %v\n", err)
+			return
+		}
+
+		switch customErr.ErrCode {
+		case DuplicateKeyErr:
+			fmt.Printf("Failed updating users: %v\n", customErr)
+			return
+		}
+	}
+	fmt.Printf("Update users: %+v", updatedUsers)
 
 	// bulk delete users
 	deletedUserIDs := make([]UserID, 0, len(createdUsers))
 	for _, createdUser := range createdUsers {
-		deletedUserIDs = append(deletedUserIDs, createdUser.ID)
+		deletedUserIDs = append(deletedUserIDs, createdUser.GetID())
 	}
 	if err := BulkDeleteUsers(ctx, db, deletedUserIDs); err != nil {
 		fmt.Printf("Failed deleting users: %v", err)
 		return
 	}
-	fmt.Printf("Delete userIDs: %v", deletedUserIDs)
+	fmt.Printf("Delete userIDs: %+v", deletedUserIDs)
 }

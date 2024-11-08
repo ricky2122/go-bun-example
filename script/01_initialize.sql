@@ -1,9 +1,9 @@
 -- create user table
 CREATE TABLE users (
     id SERIAL NOT NULL,
-    name VARCHAR(16) NOT NULL UNIQUE,
-    password VARCHAR(16) NOT NULL,
-    email VARCHAR(50) NOT NULL UNIQUE,
+    name VARCHAR(32) NOT NULL UNIQUE,
+    password VARCHAR(32) NOT NULL,
+    email VARCHAR(64) NOT NULL UNIQUE,
     birth_day DATE NOT NULL,
     PRIMARY KEY (id)
 );
@@ -16,7 +16,7 @@ VALUES
         'user01',
         'example01',
         'example01@example.com',
-        '2000-01-01'
+        '2001-01-01'
     );
 
 INSERT INTO
@@ -26,7 +26,7 @@ VALUES
         'user02',
         'example02',
         'example02@example.com',
-        '2001-01-01'
+        '2002-01-01'
     );
 
 INSERT INTO
