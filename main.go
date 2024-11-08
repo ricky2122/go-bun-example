@@ -23,7 +23,7 @@ func main() {
 	conf := DBConfig{
 		Host:     "localhost",
 		Port:     "15432",
-		DBName:   "bun-example",
+		DBName:   "bun_example",
 		User:     "root",
 		Password: "password",
 	}

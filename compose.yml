@@ -6,10 +6,11 @@ services:
       - 15432:5432
     volumes:
       - db-store:/var/lib/postgresql/data
+      - ./script:/docker-entrypoint-initdb.d
     environment:
       - POSTGRES_USER=root
       - POSTGRES_PASSWORD=password
-      - POSTGRES_DB=bun-example
+      - POSTGRES_DB=bun_example
 
 volumes:
   db-store:
