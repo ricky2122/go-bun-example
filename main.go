@@ -13,8 +13,10 @@ type DBConfig struct {
 	Password string
 }
 
+type UserID int
+
 type User struct {
-	ID       int64
+	ID       UserID
 	Name     string
 	Password string
 	Email    string
@@ -40,4 +42,12 @@ func main() {
 		return
 	}
 	fmt.Printf("users: %v", users)
+
+	// get user by id
+	userID := 1
+	user, err := GetUserByID(ctx, db, int64(userID))
+	if err != nil {
+		fmt.Printf("Failed getting user(id: %d): %v", userID, err)
+	}
+	fmt.Printf("user(id:%d): %v", userID, *user)
 }

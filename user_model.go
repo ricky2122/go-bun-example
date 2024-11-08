@@ -9,11 +9,22 @@ import (
 type UserModel struct {
 	bun.BaseModel `bun:"table:users,alias:u"`
 
-	ID       int64  `bun:"id,pk,autoincrement"`
+	ID       int    `bun:"id,pk,autoincrement"`
 	Name     string `bun:"name,notnull,unique"`
 	Password string `bun:"password,notnull"`
 	Email    string `bun:"email,notnull,unique"`
 	BirthDay string `bun:"birth_day,notnull"`
+}
+
+func GetUserByID(ctx context.Context, db *bun.DB, userID int64) (*User, error) {
+	var userModel UserModel
+	if err := db.NewSelect().Model(&userModel).Where("id = ?", userID).Scan(ctx); err != nil {
+		return nil, err
+	}
+
+	user := convertToUser(userModel)
+
+	return &user, nil
 }
 
 func GetUsers(ctx context.Context, db *bun.DB) ([]User, error) {
@@ -27,18 +38,21 @@ func GetUsers(ctx context.Context, db *bun.DB) ([]User, error) {
 	return users, nil
 }
 
+func convertToUser(userModel UserModel) User {
+	return User{
+		ID:       UserID(userModel.ID),
+		Name:     userModel.Name,
+		Password: userModel.Password,
+		Email:    userModel.Email,
+		BirthDay: userModel.BirthDay,
+	}
+}
+
 func convertToUsers(userModels []UserModel) []User {
-	users := make([]User, len(userModels))
+	users := make([]User, 0, len(userModels))
 
 	for _, userModel := range userModels {
-		user := User{
-			ID:       userModel.ID,
-			Name:     userModel.Name,
-			Password: userModel.Password,
-			Email:    userModel.Email,
-			BirthDay: userModel.BirthDay,
-		}
-		users = append(users, user)
+		users = append(users, convertToUser(userModel))
 	}
 
 	return users
