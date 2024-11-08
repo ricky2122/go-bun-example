@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/uptrace/bun"
 )
 
 type DBConfig struct {
@@ -26,6 +28,28 @@ func main() {
 	db := NewDB(conf)
 	ctx := context.TODO()
 
+	// create article table
+	if err := CreateArticleTable(ctx, db); err != nil {
+		fmt.Printf("Failed creating article table: %v", err)
+		return
+	}
+
+	// truncate article table
+	if err := TruncateArticleTable(ctx, db); err != nil {
+		fmt.Printf("Failed truncating article table: %v", err)
+		return
+	}
+
+	// drop article table
+	if err := DropArticleTable(ctx, db); err != nil {
+		fmt.Printf("Failed deleting article table: %v", err)
+		return
+	}
+
+	// userDBExecution(ctx, db)
+}
+
+func userDBExecution(ctx context.Context, db *bun.DB) {
 	// get users
 	users, err := GetUsers(ctx, db)
 	if err != nil {
@@ -51,18 +75,7 @@ func main() {
 	createUser, _ := NewUser("user04", "example04", "example04@example.com", "2004-01-01")
 	createdUser, err := CreateUser(ctx, db, *createUser)
 	if err != nil {
-		var customErr *CustomError
-		if !errors.As(err, &customErr) {
-			fmt.Printf("Failed creating user: %v\n", err)
-			return
-		}
-
-		switch customErr.ErrCode {
-		case DuplicateKeyErr:
-			fmt.Printf("Failed creating user: %v\n", customErr)
-			return
-		}
-
+		checkCustomError(err)
 	}
 	fmt.Printf("Created User: %s\n", createdUser)
 
@@ -74,17 +87,7 @@ func main() {
 	_ = updateUser.SetBirthDay("2004-02-02")
 	updatedUser, err := UpdateUser(ctx, db, *updateUser)
 	if err != nil {
-		var customErr *CustomError
-		if !errors.As(err, &customErr) {
-			fmt.Printf("Failed updating user: %v\n", err)
-			return
-		}
-
-		switch customErr.ErrCode {
-		case DuplicateKeyErr:
-			fmt.Printf("Failed updating user: %v\n", customErr)
-			return
-		}
+		checkCustomError(err)
 	}
 	fmt.Printf("Updated user: %s\n", updatedUser)
 
@@ -108,17 +111,7 @@ func main() {
 	}
 	createdUsers, err := BulkInsertUsers(ctx, db, createUsers)
 	if err != nil {
-		var customErr *CustomError
-		if !errors.As(err, &customErr) {
-			fmt.Printf("Failed creating users: %v\n", err)
-			return
-		}
-
-		switch customErr.ErrCode {
-		case DuplicateKeyErr:
-			fmt.Printf("Failed creating users: %v\n", customErr)
-			return
-		}
+		checkCustomError(err)
 	}
 	fmt.Printf("created users: %+v\n", createdUsers)
 
@@ -140,17 +133,7 @@ func main() {
 	}
 	updatedUsers, err := BulkUpdateUsers(ctx, db, updateUsers)
 	if err != nil {
-		var customErr *CustomError
-		if !errors.As(err, &customErr) {
-			fmt.Printf("Failed updating users: %v\n", err)
-			return
-		}
-
-		switch customErr.ErrCode {
-		case DuplicateKeyErr:
-			fmt.Printf("Failed updating users: %v\n", customErr)
-			return
-		}
+		checkCustomError(err)
 	}
 	fmt.Printf("Update users: %+v", updatedUsers)
 
@@ -164,4 +147,18 @@ func main() {
 		return
 	}
 	fmt.Printf("Delete userIDs: %+v", deletedUserIDs)
+}
+
+func checkCustomError(err error) {
+	var customErr *CustomError
+	if !errors.As(err, &customErr) {
+		fmt.Printf("Failed updating users: %v\n", err)
+		return
+	}
+
+	switch customErr.ErrCode {
+	case ErrDuplicateKey:
+		fmt.Printf("Failed updating users: %v\n", customErr)
+		return
+	}
 }

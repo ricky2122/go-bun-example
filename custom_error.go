@@ -8,7 +8,7 @@ func (code ErrCode) Wrap(err error, message string) error {
 
 const (
 	// R00x is Repository errors
-	DuplicateKeyErr ErrCode = "R001" // SQL error
+	ErrDuplicateKey ErrCode = "R001" // SQL error
 )
 
 type CustomError struct {

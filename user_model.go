@@ -173,7 +173,7 @@ func checkDuplicateError(err error) error {
 	if errors.As(err, &pgdErr) {
 		// SQLState 23305 indicates a unique violation
 		if pgdErr.Field('C') == "23505" {
-			return DuplicateKeyErr.Wrap(err, "duplicate key error")
+			return ErrDuplicateKey.Wrap(err, "duplicate key error")
 		}
 		return pgdErr
 	}
