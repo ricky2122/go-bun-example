@@ -107,4 +107,35 @@ func main() {
 		fmt.Printf("Failed deleting user: %v\n", err)
 		return
 	}
+
+	// bulk insert users
+	createUsers := []User{
+		{
+			Name:     "user06",
+			Password: "example06",
+			Email:    "example06@example.com",
+			BirthDay: "2005-01-01",
+		},
+		{
+			Name:     "user07",
+			Password: "example07",
+			Email:    "example07@example.com",
+			BirthDay: "2006-01-01",
+		},
+	}
+	createdUsers, err := BulkInsertUsers(ctx, db, createUsers)
+	if err != nil {
+		var customErr *CustomError
+		if !errors.As(err, &customErr) {
+			fmt.Printf("Failed creating users: %v\n", err)
+			return
+		}
+
+		switch customErr.ErrCode {
+		case DuplicateKeyErr:
+			fmt.Printf("Failed creating users: %v\n", customErr)
+			return
+		}
+	}
+	fmt.Printf("created users: %v", createdUsers)
 }

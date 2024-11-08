@@ -42,6 +42,18 @@ func CreateUser(ctx context.Context, db *bun.DB, newUser User) (*User, error) {
 	return &createdUser, nil
 }
 
+func BulkInsertUsers(ctx context.Context, db *bun.DB, createUsers []User) ([]User, error) {
+	createUserModels := convertToUserModels(createUsers)
+
+	if _, err := db.NewInsert().Model(&createUserModels).Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	createdUsers := convertToUsers(createUserModels)
+
+	return createdUsers, nil
+}
+
 func DeleteUser(ctx context.Context, db *bun.DB, deleteUserID UserID) error {
 	if _, err := db.NewDelete().Model((*UserModel)(nil)).Where("id = ?", deleteUserID).Exec(ctx); err != nil {
 		return err
@@ -109,4 +121,14 @@ func convertToUserModel(user User) UserModel {
 		Email:    user.Email,
 		BirthDay: user.BirthDay,
 	}
+}
+
+func convertToUserModels(users []User) []UserModel {
+	userModels := make([]UserModel, 0, len(users))
+
+	for _, user := range users {
+		userModels = append(userModels, convertToUserModel(user))
+	}
+
+	return userModels
 }
