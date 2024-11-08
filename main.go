@@ -1,14 +1,8 @@
 package main
 
 import (
-	"database/sql"
+	"context"
 	"fmt"
-	"log"
-
-	"github.com/uptrace/bun"
-	"github.com/uptrace/bun/dialect/pgdialect"
-	"github.com/uptrace/bun/driver/pgdriver"
-	"github.com/uptrace/bun/extra/bundebug"
 )
 
 type DBConfig struct {
@@ -17,6 +11,14 @@ type DBConfig struct {
 	DBName   string
 	User     string
 	Password string
+}
+
+type User struct {
+	ID       int64
+	Name     string
+	Password string
+	Email    string
+	BirthDay string
 }
 
 func main() {
@@ -28,33 +30,14 @@ func main() {
 		Password: "password",
 	}
 
-	_ = NewDB(conf)
-}
+	db := NewDB(conf)
+	ctx := context.TODO()
 
-func NewDB(conf DBConfig) *bun.DB {
-	dsn := genDSN(conf)
-	sqlDB := sql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(dsn)))
-	db := bun.NewDB(sqlDB, pgdialect.New())
-
-	if err := db.Ping(); err != nil {
-		log.Fatalf("Failed open")
+	// get users
+	users, err := GetUsers(ctx, db)
+	if err != nil {
+		fmt.Printf("Failed getting users: %v", err)
+		return
 	}
-
-	db.AddQueryHook(bundebug.NewQueryHook(
-		bundebug.WithVerbose(true),
-		bundebug.FromEnv("BUNDEBUG"),
-	))
-
-	return db
-}
-
-func genDSN(conf DBConfig) string {
-	return fmt.Sprintf(
-		"postgres://%s:%s@%s:%s/%s?sslmode=disable",
-		conf.User,
-		conf.Password,
-		conf.Host,
-		conf.Port,
-		conf.DBName,
-	)
+	fmt.Printf("users: %v", users)
 }
