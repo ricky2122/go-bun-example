@@ -42,7 +42,7 @@ func main() {
 		fmt.Printf("Failed getting users: %v\n", err)
 		return
 	}
-	fmt.Printf("users: %v\n", users)
+	fmt.Printf("Get users: %v\n", users)
 
 	// get user by id
 	userID := 1
@@ -51,7 +51,7 @@ func main() {
 		fmt.Printf("Failed getting user(id: %d): %v\n", userID, err)
 		return
 	}
-	fmt.Printf("user(id:%d): %v\n", userID, *user)
+	fmt.Printf("Get user: %v\n", *user)
 
 	// create user
 	newUser := User{
@@ -75,7 +75,7 @@ func main() {
 		}
 
 	}
-	fmt.Printf("created User: %v\n", createdUser)
+	fmt.Printf("Created User: %v\n", createdUser)
 
 	// update user
 	updateUser := User{
@@ -99,7 +99,7 @@ func main() {
 			return
 		}
 	}
-	fmt.Printf("updated user: %v\n", updatedUser)
+	fmt.Printf("Updated user: %v\n", updatedUser)
 
 	// delete user
 	deleteUserID := createdUser.ID
@@ -107,6 +107,7 @@ func main() {
 		fmt.Printf("Failed deleting user: %v\n", err)
 		return
 	}
+	fmt.Printf("Delete userID: %d", deleteUserID)
 
 	// bulk insert users
 	createUsers := []User{
@@ -138,4 +139,15 @@ func main() {
 		}
 	}
 	fmt.Printf("created users: %v", createdUsers)
+
+	// bulk delete users
+	deletedUserIDs := make([]UserID, 0, len(createdUsers))
+	for _, createdUser := range createdUsers {
+		deletedUserIDs = append(deletedUserIDs, createdUser.ID)
+	}
+	if err := BulkDeleteUsers(ctx, db, deletedUserIDs); err != nil {
+		fmt.Printf("Failed deleting users: %v", err)
+		return
+	}
+	fmt.Printf("Delete userIDs: %v", deletedUserIDs)
 }

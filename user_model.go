@@ -55,7 +55,22 @@ func BulkInsertUsers(ctx context.Context, db *bun.DB, createUsers []User) ([]Use
 }
 
 func DeleteUser(ctx context.Context, db *bun.DB, deleteUserID UserID) error {
-	if _, err := db.NewDelete().Model((*UserModel)(nil)).Where("id = ?", deleteUserID).Exec(ctx); err != nil {
+	deleteUserModel := UserModel{ID: int(deleteUserID)}
+	if _, err := db.NewDelete().Model(&deleteUserModel).WherePK().Exec(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func BulkDeleteUsers(ctx context.Context, db *bun.DB, deleteUserIDs []UserID) error {
+	deleteUserModels := make([]UserModel, 0, len(deleteUserIDs))
+
+	for _, deleteUserID := range deleteUserIDs {
+		deleteUserModels = append(deleteUserModels, UserModel{ID: int(deleteUserID)})
+	}
+
+	if _, err := db.NewDelete().Model(&deleteUserModels).WherePK().Exec(ctx); err != nil {
 		return err
 	}
 
