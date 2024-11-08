@@ -2,8 +2,10 @@ package main
 
 import (
 	"context"
+	"errors"
 
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/driver/pgdriver"
 )
 
 type UserModel struct {
@@ -14,6 +16,30 @@ type UserModel struct {
 	Password string `bun:"password,notnull"`
 	Email    string `bun:"email,notnull,unique"`
 	BirthDay string `bun:"birth_day,notnull"`
+}
+
+func CreateUser(ctx context.Context, db *bun.DB, newUser User) (*User, error) {
+	userModel := convertToUserModel(newUser)
+	_, err := db.NewInsert().
+		Model(&userModel).
+		Returning("id").
+		Exec(ctx)
+	if err != nil {
+		// Check if the error is a pgdriver.Error
+		var pgdErr pgdriver.Error
+		if errors.As(err, &pgdErr) {
+			// SQLState 23305 indicates a unique violation
+			if pgdErr.Field('C') == "23505" {
+				return nil, DuplicateKeyErr.Wrap(err, "duplicate key error")
+			}
+			return nil, pgdErr
+		}
+		return nil, err
+	}
+
+	createdUser := convertToUser(userModel)
+
+	return &createdUser, nil
 }
 
 func GetUserByID(ctx context.Context, db *bun.DB, userID int64) (*User, error) {
@@ -56,4 +82,13 @@ func convertToUsers(userModels []UserModel) []User {
 	}
 
 	return users
+}
+
+func convertToUserModel(user User) UserModel {
+	return UserModel{
+		Name:     user.Name,
+		Password: user.Password,
+		Email:    user.Email,
+		BirthDay: user.BirthDay,
+	}
 }
