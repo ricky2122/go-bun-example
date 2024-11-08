@@ -76,4 +76,10 @@ func main() {
 
 	}
 	fmt.Printf("created User: %v", createdUser)
+
+	// delete user
+	deleteUserID := 4
+	if err := DeleteUser(ctx, db, UserID(deleteUserID)); err != nil {
+		fmt.Printf("Failed delete user: %v", err)
+	}
 }

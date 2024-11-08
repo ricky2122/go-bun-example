@@ -42,6 +42,14 @@ func CreateUser(ctx context.Context, db *bun.DB, newUser User) (*User, error) {
 	return &createdUser, nil
 }
 
+func DeleteUser(ctx context.Context, db *bun.DB, deleteUserID UserID) error {
+	if _, err := db.NewDelete().Model((*UserModel)(nil)).Where("id = ?", deleteUserID).Exec(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func GetUserByID(ctx context.Context, db *bun.DB, userID int64) (*User, error) {
 	var userModel UserModel
 	if err := db.NewSelect().Model(&userModel).Where("id = ?", userID).Scan(ctx); err != nil {
