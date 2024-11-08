@@ -50,6 +50,15 @@ func DeleteUser(ctx context.Context, db *bun.DB, deleteUserID UserID) error {
 	return nil
 }
 
+func UpdateUser(ctx context.Context, db *bun.DB, updateUser User) (*User, error) {
+	updateUserModel := convertToUserModel(updateUser)
+	if _, err := db.NewUpdate().Model(&updateUserModel).WherePK().Exec(ctx); err != nil {
+		return nil, err
+	}
+
+	return &updateUser, nil
+}
+
 func GetUserByID(ctx context.Context, db *bun.DB, userID int64) (*User, error) {
 	var userModel UserModel
 	if err := db.NewSelect().Model(&userModel).Where("id = ?", userID).Scan(ctx); err != nil {
@@ -94,6 +103,7 @@ func convertToUsers(userModels []UserModel) []User {
 
 func convertToUserModel(user User) UserModel {
 	return UserModel{
+		ID:       int(user.ID),
 		Name:     user.Name,
 		Password: user.Password,
 		Email:    user.Email,
